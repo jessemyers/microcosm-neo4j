@@ -1,0 +1,13 @@
+---
+version: '3'
+services:
+  # define a unit test database (without volume persistence)
+  microcosm-neo4j-test:
+    command: neo4j
+    container_name: microcosm-neo4j-test
+    environment:
+      NEO4J_AUTH: neo4j/password
+    image: neo4j:3.5.1
+    ports:
+      - 17474:7474
+      - 17687:7687

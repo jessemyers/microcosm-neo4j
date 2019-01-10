@@ -1,0 +1,10 @@
+{
+  "params": {
+    "name": "microcosm-neo4j",
+    "pypi": {
+      "repository": "pypi"
+    }
+  },
+  "type": "python-library",
+  "version": "2019.1.2284"
+}
