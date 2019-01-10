@@ -33,6 +33,8 @@ setup(
     ],
     keywords="opencypher cypher neo4j",
     install_requires=[
+        "microcosm>=2.4.1",
+        "neo4j>=1.7.1",
         "opencypher>=0.2.1",
     ],
     setup_requires=[
@@ -41,6 +43,11 @@ setup(
     dependency_links=[
     ],
     entry_points={
+        "microcosm.factories": [
+            "neo4j = microcosm_neo4j.factory:configure_neo4j_driver",
+            "neo4j_query_builder = microcosm_neo4j.query:QueryBuilder",
+            "neo4j_schema_manager = microcosm_neo4j.schema:SchemaManager",
+        ],
     },
     extras_require=dict(
         test="parameterized>=0.6.1",

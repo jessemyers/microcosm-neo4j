@@ -82,13 +82,18 @@ jobs:
 
       - setup_remote_docker
       - run:
+          name: pull and run database
+          command: |
+            docker pull neo4j:3.5.1
+            docker run -d --name microcosm_neo4j_db -e NEO4J_AUTH=neo4j/password -p 17474:7474 neo4j
+      - run:
           name: Test code
           command: |
             docker create -v /src/microcosm_neo4j/tests/ --name service_tests alpine:3.4 /bin/true
             docker cp $(pwd)/microcosm_neo4j/tests service_tests:/src/microcosm_neo4j/
             eval $(aws ecr get-login --no-include-email)
             docker pull ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1}
-            docker run -it  --volumes-from service_tests ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} test
+            docker run -it  --link microcosm_neo4j_db:neo4j -e MICROCOSM_NEO4J__NEO4J__URI=bolt://neo4j:17474 --volumes-from service_tests ${AWS_ECR_DOMAIN}/python-library:${CIRCLE_SHA1} test
   lint:
     <<: *defaults
 
@@ -192,5 +197,3 @@ workflows:
               ignore: /.*/
             tags:
               only: /^[0-9]+(\.[0-9]+)*/
-
-
