@@ -7,7 +7,7 @@ from hamcrest import (
 from microcosm_neo4j.tests.fixtures import Person, IsFriendsWith
 
 
-class TestModel:
+class TestRelationship:
 
     def setup(self):
         self.nodes = [
@@ -20,23 +20,6 @@ class TestModel:
                 out_id=self.nodes[1].id,
             ),
         ]
-
-    def test_node_properties(self):
-        assert_that(
-            self.nodes[0].properties(),
-            has_entries(
-                name="left",
-            ),
-        )
-
-    def test_node_property_names(self):
-        assert_that(
-            Person.property_names(),
-            contains_inanyorder(
-                "id",
-                "name",
-            ),
-        )
 
     def test_relationship_properties(self):
         assert_that(
