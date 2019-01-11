@@ -37,10 +37,6 @@ class Entity:
         }
 
     @classmethod
-    def label(cls) -> str:
-        return cls.__name__
-
-    @classmethod
     def property_names(cls) -> Set[str]:
         """
         Return the property names of this entity type.

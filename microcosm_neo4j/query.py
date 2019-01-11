@@ -169,16 +169,16 @@ class QueryBuilder:
                 return self.create_index(model_class, index.name)
 
     def create_index(self, model_class, key):
-        return f"CREATE INDEX ON :`{model_class.label()}`({key})"
+        return f"CREATE INDEX ON :{model_class.label()}({key})"
 
     def drop_index(self, model_class, key):
-        return f"DROP INDEX ON :`{model_class.label()}`({key})"
+        return f"DROP INDEX ON :{model_class.label()}({key})"
 
     def create_unique_constraint(self, model_class, key):
-        return f"CREATE CONSTRAINT ON (node:`{model_class.label()}`) ASSERT node.`{key}` IS UNIQUE"
+        return f"CREATE CONSTRAINT ON (node:{model_class.label()}) ASSERT node.{key} IS UNIQUE"
 
     def drop_unique_constraint(self, model_class, key):
-        return f"DROP CONSTRAINT ON (node:`{model_class.label()}`) ASSERT node.`{key}` IS UNIQUE"
+        return f"DROP CONSTRAINT ON (node:{model_class.label()}) ASSERT node.{key} IS UNIQUE"
 
     def drop_all_nodes(self):
         return match(

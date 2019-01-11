@@ -2,6 +2,8 @@ from dataclasses import field
 from typing import Mapping
 from uuid import uuid4
 
+from inflection import camelize
+
 from microcosm_neo4j.models.entity import Entity
 from microcosm_neo4j.models.index import UniqueIndex
 from microcosm_neo4j.models.types import PropertyType
@@ -61,3 +63,7 @@ class Node(metaclass=NodeMeta):
             for key, value in getattr(self, "properties")().items()
             if key not in keys
         }
+
+    @classmethod
+    def label(cls) -> str:
+        return camelize(cls.__name__)

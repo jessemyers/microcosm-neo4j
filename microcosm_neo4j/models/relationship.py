@@ -1,6 +1,8 @@
 from dataclasses import field
 from uuid import uuid4
 
+from inflection import underscore
+
 from microcosm_neo4j.models.entity import Entity
 
 
@@ -26,4 +28,6 @@ class Relationship(metaclass=RelationshipMeta):
     Base class for Neo4J relationships.
 
     """
-    pass
+    @classmethod
+    def label(cls) -> str:
+        return underscore(cls.__name__).upper()

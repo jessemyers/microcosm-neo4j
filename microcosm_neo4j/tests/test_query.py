@@ -31,7 +31,7 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH (in:Person)-[relationship:IsFriendsWith]->(out:Person) "
+                "MATCH (in:Person)-[relationship:IS_FRIENDS_WITH]->(out:Person) "
                 "RETURN count(relationship) AS count",
             )),
         )
@@ -67,7 +67,7 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH (in:Person)-[relationship:IsFriendsWith]->(out:Person) "
+                "MATCH (in:Person)-[relationship:IS_FRIENDS_WITH]->(out:Person) "
                 "RETURN relationship",
             )),
         )
@@ -97,7 +97,7 @@ class TestQueryBuilder:
             is_(equal_to(
                 "MATCH (in:Person {id: $in_id}) "
                 "MATCH (out:Person {id: $out_id}) "
-                "MERGE (in)-[relationship:IsFriendsWith "
+                "MERGE (in)-[relationship:IS_FRIENDS_WITH "
                 "{in_id: $relationship_in_id, out_id: $relationship_out_id, id: $relationship_id}"
                 "]->(out) "
                 "RETURN relationship"
@@ -118,7 +118,7 @@ class TestQueryBuilder:
         assert_that(
             str(self.query_builder.create_index(Person, "name")),
             is_(equal_to(
-                "CREATE INDEX ON :`Person`(name)",
+                "CREATE INDEX ON :Person(name)",
             )),
         )
 
@@ -126,7 +126,7 @@ class TestQueryBuilder:
         assert_that(
             str(self.query_builder.drop_index(Person, "name")),
             is_(equal_to(
-                "DROP INDEX ON :`Person`(name)",
+                "DROP INDEX ON :Person(name)",
             )),
         )
 
@@ -134,7 +134,7 @@ class TestQueryBuilder:
         assert_that(
             str(self.query_builder.create_unique_constraint(Person, "name")),
             is_(equal_to(
-                "CREATE CONSTRAINT ON (node:`Person`) ASSERT node.`name` IS UNIQUE",
+                "CREATE CONSTRAINT ON (node:Person) ASSERT node.name IS UNIQUE",
             )),
         )
 
@@ -142,7 +142,7 @@ class TestQueryBuilder:
         assert_that(
             str(self.query_builder.drop_unique_constraint(Person, "name")),
             is_(equal_to(
-                "DROP CONSTRAINT ON (node:`Person`) ASSERT node.`name` IS UNIQUE",
+                "DROP CONSTRAINT ON (node:Person) ASSERT node.name IS UNIQUE",
             )),
         )
 
