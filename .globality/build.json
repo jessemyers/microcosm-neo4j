@@ -1,5 +1,6 @@
 {
   "params": {
+    "database": "neo4j",
     "name": "microcosm-neo4j",
     "pypi": {
       "repository": "pypi"
