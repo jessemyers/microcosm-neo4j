@@ -21,8 +21,8 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( node :Person ) "
-                "RETURN count( node ) AS count",
+                "MATCH (node:Person) "
+                "RETURN count(node) AS count",
             )),
         )
 
@@ -31,8 +31,8 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( in :Person ) - [ relationship :IsFriendsWith ] -> ( out :Person ) "
-                "RETURN count( relationship ) AS count",
+                "MATCH (in:Person)-[relationship:IsFriendsWith]->(out:Person) "
+                "RETURN count(relationship) AS count",
             )),
         )
 
@@ -41,7 +41,7 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( node :Person ) "
+                "MATCH (node:Person) "
                 "RETURN node",
             )),
         )
@@ -51,7 +51,7 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( node :Person { name: $node_name } ) "
+                "MATCH (node:Person {name: $node_name}) "
                 "RETURN node",
             )),
         )
@@ -67,7 +67,7 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( in :Person ) - [ relationship :IsFriendsWith ] -> ( out :Person ) "
+                "MATCH (in:Person)-[relationship:IsFriendsWith]->(out:Person) "
                 "RETURN relationship",
             )),
         )
@@ -77,7 +77,7 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MERGE ( node :Person { name: $node_name } ) "
+                "MERGE (node:Person {name: $node_name}) "
                 "SET node.id = $node_id "
                 "RETURN node",
             )),
@@ -95,11 +95,11 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( in :Person { id: $in_id } ) "
-                "MATCH ( out :Person { id: $out_id } ) "
-                "MERGE ( in ) - [ relationship :IsFriendsWith "
-                "{ in_id: $relationship_in_id, out_id: $relationship_out_id, id: $relationship_id } "
-                "] -> ( out ) "
+                "MATCH (in:Person {id: $in_id}) "
+                "MATCH (out:Person {id: $out_id}) "
+                "MERGE (in)-[relationship:IsFriendsWith "
+                "{in_id: $relationship_in_id, out_id: $relationship_out_id, id: $relationship_id}"
+                "]->(out) "
                 "RETURN relationship"
             )),
         )
@@ -151,6 +151,6 @@ class TestQueryBuilder:
         assert_that(
             str(cypher),
             is_(equal_to(
-                "MATCH ( node ) DETACH DELETE node",
+                "MATCH (node) DETACH DELETE node",
             )),
         )

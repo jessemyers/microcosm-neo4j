@@ -35,7 +35,7 @@ setup(
     install_requires=[
         "microcosm>=2.4.1",
         "neo4j>=1.7.1",
-        "opencypher>=0.2.1",
+        "opencypher>=0.3.0",
     ],
     setup_requires=[
         "nose>=1.3.7",
