@@ -1,38 +1,97 @@
+from typing import TypeVar, Type
+
+from opencypher.api import (
+    func,
+    expr,
+    match,
+    merge,
+    node,
+    parameters,
+)
+from opencypher.ast import Cypher
+
+from microcosm_neo4j.models.node import Node
 from microcosm_neo4j.stores.base import Store
 
 
-class NodeStore(Store):
+N = TypeVar("N", bound=Node)
+
+
+class NodeStore(Store[N]):
     """
     Expose node persistence operations using `neo4j-driver`.
 
     """
-    def create(self, node):
-        query = self.query_builder.upsert_node(node, "n")
-        item = self._one(query)
-        return self.model_class(**self.to_dict(item))
+    def __init__(self, graph, model_class: Type[N]):
+        super().__init__(graph, model_class, "nodes_deleted")
 
-    def delete(self, identifier):
-        query = self.query_builder.delete_nodes(self.model_class, id=str(identifier))
-        result = self._run(query)
-        return result.summary().counters.nodes_deleted
+    @property
+    def variable(self) -> str:
+        return "n"
 
-    def retrieve(self, identifier):
-        query = self.query_builder.match_nodes(self.model_class, id=str(identifier))
-        item = self._one(query)
-        return self.model_class(**self.to_dict(item))
+    def _count(self, **kwargs) -> int:
+        return match(
+            node(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(**kwargs),
+            ),
+        ).ret(
+            func.count(self.variable).as_("count"),
+        )
 
-    def search(self, **kwargs):
-        query = self.query_builder.match_nodes(self.model_class, **kwargs)
-        items = self._all(query)
-        # XXX support offset+limit (via skip/limit)
-        return [
-            self.model_class(**self.to_dict(item))
-            for item in items
-        ]
+    def _create(self, instance: N) -> Cypher:
+        assignments = parameters(
+            key_prefix=self.variable,
+            name_prefix=self.variable,
+            **instance.value_properties()
+        )
+        return merge(
+            node(
+                self.variable,
+                instance.__class__.label(),
+                properties=instance.unique_properties(),
+            ),
+        ).set(
+            assignments[0],
+            *assignments[1:],
+        ).ret(
+            expr(self.variable),
+        )
 
-    def count(self, **kwargs):
-        # XXX count may not be efficient
-        # https://neo4j.com/developer/kb/fast-counts-using-the-count-store/
-        query = self.query_builder.count_nodes(self.model_class, **kwargs)
-        item = self._one(query)
-        return item["count"]
+    def _delete(self, identifier: str) -> Cypher:
+        return match(
+            node(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(
+                    id=str(identifier),
+                ),
+            ),
+        ).delete(
+            self.variable,
+        )
+
+    def _retrieve(self, identifier: str) -> Cypher:
+        return match(
+            node(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(
+                    id=str(identifier),
+                ),
+            ),
+        ).ret(
+            expr(self.variable),
+        )
+
+    def _search(self, **kwargs) -> Cypher:
+        return match(
+            node(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(**kwargs),
+            ),
+        ).ret(
+            expr(self.variable),
+        )

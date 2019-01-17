@@ -13,10 +13,10 @@ class NodeMeta(type):
 
     def __new__(cls, name, bases, dct):
         if name == "Node":
-            return super().__new__(cls, name, bases + (Entity, ), dct)
+            return super().__new__(cls, name, bases, dct)
 
         # inject the id's type
-        dct["__annotations__"].update(
+        dct.setdefault("__annotations__", {}).update(
             id=str,
         )
         # inject the id's default factory
@@ -31,7 +31,7 @@ class NodeMeta(type):
         return super().__new__(cls, name, bases, dct)
 
 
-class Node(metaclass=NodeMeta):
+class Node(Entity, metaclass=NodeMeta):
     """
     Base class for Neo4J nodes.
 

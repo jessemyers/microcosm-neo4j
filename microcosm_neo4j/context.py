@@ -5,13 +5,15 @@ Session context management.
 from contextlib import contextmanager
 from functools import wraps
 
+from neo4j import Session
+
 
 class SessionContext:
     """
     Save current session in well-known location and provide context management.
 
     """
-    session = None
+    session: Session = None
 
     def __init__(self, graph):
         self.graph = graph

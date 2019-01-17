@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Type
 
 from hamcrest import has_properties
 
@@ -17,19 +18,24 @@ class Person(Node):
 
 @dataclass(frozen=False)
 class IsFriendsWith(Relationship):
-    in_id: str
-    out_id: str
 
-    in_class = Person
-    out_class = Person
+    @classmethod
+    def in_class(cls) -> Type[Person]:
+        return Person
+
+    @classmethod
+    def out_class(cls) -> Type[Person]:
+        return Person
 
 
-class PersonStore(NodeStore):
+class PersonStore(NodeStore[Person]):
+
     def __init__(self, graph):
         super().__init__(graph, Person)
 
 
-class IsFriendsWithStore(RelationshipStore):
+class IsFriendsWithStore(RelationshipStore[IsFriendsWith]):
+
     def __init__(self, graph):
         super().__init__(graph, IsFriendsWith)
 

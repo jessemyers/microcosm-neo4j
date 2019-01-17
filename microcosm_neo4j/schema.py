@@ -10,7 +10,7 @@ from microcosm_neo4j.errors import (
     NoSuchConstraintError,
     NoSuchIndexError,
 )
-from microcosm_neo4j.models import Node
+from microcosm_neo4j.models import Index, Node
 
 
 class SchemaManager:
@@ -90,3 +90,21 @@ class SchemaManager:
         for model_class in Node.__subclasses__():
             for index in model_class.__indexes__:
                 yield model_class, index
+
+    def get_indexes(self):
+        records = list(self.session.run("CALL db.indexes"))
+        return [
+            Index(
+                name=record.get("properties")[0],
+                unique=record.get("type") == "node_unique_property",
+                targets=record.get("tokenNames"),
+            )
+            for record in records
+        ]
+
+    def get_constraints(self):
+        records = list(self.session.run("CALL db.constraints"))
+        return [
+            record.data()
+            for record in records
+        ]

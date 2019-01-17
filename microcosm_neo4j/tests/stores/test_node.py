@@ -1,13 +1,16 @@
 from hamcrest import (
     assert_that,
+    calling,
     contains,
     contains_inanyorder,
     equal_to,
     is_,
+    raises,
 )
 from microcosm.api import create_object_graph
 
 from microcosm_neo4j.context import SessionContext
+from microcosm_neo4j.errors import NotFoundError
 from microcosm_neo4j.tests.fixtures import (
     matches_person,
     Person,
@@ -54,6 +57,38 @@ class TestNodeStore:
             assert_that(
                 self.store.count(),
                 is_(equal_to(1)),
+            )
+
+    def test_delete(self):
+        with SessionContext(self.graph):
+            self.store.create(self.node)
+
+            assert_that(
+                self.store.delete(self.node.id),
+                is_(equal_to(True)),
+            )
+
+    def test_delete_not_found(self):
+        with SessionContext(self.graph):
+            assert_that(
+                self.store.delete(self.node.id),
+                is_(equal_to(False)),
+            )
+
+    def test_retrieve(self):
+        with SessionContext(self.graph):
+            self.store.create(self.node)
+
+            assert_that(
+                self.store.retrieve(self.node.id),
+                is_(equal_to(self.node)),
+            )
+
+    def test_retrieve_not_found(self):
+        with SessionContext(self.graph):
+            assert_that(
+                calling(self.store.retrieve).with_args(self.node.id),
+                raises(NotFoundError),
             )
 
     def test_search(self):
