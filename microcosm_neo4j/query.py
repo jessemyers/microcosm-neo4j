@@ -1,46 +1,82 @@
-from opencypher.api import (
-    match,
-    node,
+"""
+Query API.
+
+"""
+from contextlib import contextmanager
+from typing import Dict, Generator, List
+
+from neobolt.exceptions import ConstraintError
+from neo4j import BoltStatementResult, Record, Session
+from opencypher.ast import Cypher
+
+from microcosm_neo4j.errors import (
+    DuplicateModelError,
+    ModelIntegrityError,
+    NotFoundError,
 )
 
 
-class QueryBuilder:
+@contextmanager
+def error_handling() -> Generator[None, None, None]:
     """
-    Build queries using Pypher.
+    Handle common Neo4J errors and re-raise as typed exceptions.
+
+    Many Neo4J errors are only differentiable via error message text; handle all of this
+    logic in one place.
 
     """
-    def __init__(self, graph):
-        pass
+    try:
+        yield
+    except ConstraintError as error:
+        if "already exists" in error.message:
+            raise DuplicateModelError(error)
+        if "due to conflicts with existing unique nodes" in error.message:
+            raise DuplicateModelError(error)
+        raise ModelIntegrityError(error)
 
-    def manage_index(self, model_class, index, drop=False):
-        # NB: uniqueness constraints imply an index
-        if drop:
-            if index.unique:
-                return self.drop_unique_constraint(model_class, index.name)
-            else:
-                return self.drop_index(model_class, index.name)
-        else:
-            if index.unique:
-                return self.create_unique_constraint(model_class, index.name)
-            else:
-                return self.create_index(model_class, index.name)
 
-    def create_index(self, model_class, key):
-        return f"CREATE INDEX ON :{model_class.label()}({key})"
+def run(session: Session, query: Cypher) -> BoltStatementResult:
+    """
+    Run a query using the current session.
 
-    def drop_index(self, model_class, key):
-        return f"DROP INDEX ON :{model_class.label()}({key})"
+    """
+    # express the query as a string
+    cypher = str(query)
+    # express the parameters as a dictionary
+    parameters = dict(query)
+    return session.run(cypher, **parameters)
 
-    def create_unique_constraint(self, model_class, key):
-        return f"CREATE CONSTRAINT ON (node:{model_class.label()}) ASSERT node.{key} IS UNIQUE"
 
-    def drop_unique_constraint(self, model_class, key):
-        return f"DROP CONSTRAINT ON (node:{model_class.label()}) ASSERT node.{key} IS UNIQUE"
+def to_dict(record: Record) -> Dict[str, str]:
+    """
+    Convert a return value into a dictionary.
 
-    def drop_all_nodes(self):
-        return match(
-            node("node"),
-        ).delete(
-            "node",
-            detach=True,
-        )
+    Note that while the `_id` property is accessible during this translation,
+    we choose to respect Neo4J's design that its internal integer ids be treated
+    as implementation details.
+
+    """
+    # NB: assumes we only want one record at a time; for more complex cases use `record[variable]`
+    entity = next(iter(record))
+    return entity._properties
+
+
+def one_record(session: Session, query: Cypher) -> Dict[str, str]:
+    with error_handling():
+        record = run(session, query).single()
+
+    if record is None:
+        # Neo4J doesn't give us a lot of context in its error responses; however just about
+        # every reason we might not get back a result relates to either omitting a `RETURN`
+        # clause or defining `MATCH` clause with no results.
+        raise NotFoundError()
+
+    return to_dict(record)
+
+
+def all_records(session: Session, query: Cypher) -> List[Dict[str, str]]:
+    with error_handling():
+        return [
+            to_dict(record)
+            for record in run(session, query)
+        ]

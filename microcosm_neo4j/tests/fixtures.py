@@ -3,7 +3,7 @@ from typing import Type
 
 from hamcrest import has_properties
 
-from microcosm_neo4j.models import Node, Relationship, UniqueIndex
+from microcosm_neo4j.models import Node, Relationship, Index
 from microcosm_neo4j.stores import NodeStore, RelationshipStore
 
 
@@ -12,7 +12,7 @@ class Person(Node):
     name: str
 
     __indexes__ = [
-        UniqueIndex("name"),
+        Index.unique("Person", "name"),
     ]
 
 

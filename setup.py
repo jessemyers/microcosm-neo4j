@@ -45,8 +45,7 @@ setup(
     entry_points={
         "microcosm.factories": [
             "neo4j = microcosm_neo4j.factory:configure_neo4j_driver",
-            "neo4j_query_builder = microcosm_neo4j.query:QueryBuilder",
-            "neo4j_schema_manager = microcosm_neo4j.schema:SchemaManager",
+            "neo4j_schema_manager = microcosm_neo4j.schema_manager:SchemaManager",
         ],
     },
     extras_require=dict(

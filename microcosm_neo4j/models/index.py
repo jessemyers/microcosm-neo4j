@@ -1,14 +1,13 @@
-from dataclasses import dataclass, field
-from typing import List
+from dataclasses import dataclass
 
 
-@dataclass
+@dataclass(frozen=True)
 class Index:
-    name: str
+    label: str
+    # NB: support for "Node Keys" is not implemented
+    key: str
     unique: bool = False
-    targets: List[str] = field(default_factory=list)
 
-
-class UniqueIndex(Index):
-    def __init__(self, name: str):
-        super().__init__(name, True)
+    @classmethod
+    def unique(cls, label: str, key: str) -> "Index":
+        return cls(label, key)

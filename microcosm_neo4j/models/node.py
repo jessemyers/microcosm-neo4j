@@ -5,7 +5,7 @@ from uuid import uuid4
 from inflection import camelize
 
 from microcosm_neo4j.models.entity import Entity
-from microcosm_neo4j.models.index import UniqueIndex
+from microcosm_neo4j.models.index import Index
 from microcosm_neo4j.models.types import PropertyType
 
 
@@ -25,7 +25,7 @@ class NodeMeta(type):
         )
 
         dct.setdefault("__indexes__", []).append(
-            UniqueIndex("id"),
+            Index.unique(name, "id"),
         )
 
         return super().__new__(cls, name, bases, dct)
@@ -38,9 +38,9 @@ class Node(Entity, metaclass=NodeMeta):
     """
     def unique_properties(self) -> Mapping[str, PropertyType]:
         keys = {
-            index.name
+            index.key
             for index in getattr(self, "__indexes__")
-            if index.unique and index.name != "id"
+            if index.unique and "id" != index.key
         }
         return {
             key: value
@@ -54,9 +54,9 @@ class Node(Entity, metaclass=NodeMeta):
 
         """
         keys = {
-            index.name
+            index.key
             for index in getattr(self, "__indexes__")
-            if index.unique and index.name != "id"
+            if index.unique and "id" != index.key
         }
         return {
             key: value

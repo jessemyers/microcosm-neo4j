@@ -3,10 +3,10 @@ from typing import Generic, Sequence, Type, TypeVar
 from neo4j import Session
 from opencypher.ast import Cypher
 
-from microcosm_neo4j.api import all_records, one_record, run
 from microcosm_neo4j.context import SessionContext
 from microcosm_neo4j.errors import MissingDependencyError
 from microcosm_neo4j.models.entity import Entity
+from microcosm_neo4j.query import all_records, one_record, run
 
 
 T = TypeVar("T", bound=Entity)
