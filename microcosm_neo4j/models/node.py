@@ -1,5 +1,5 @@
 from dataclasses import field
-from typing import Mapping
+from typing import Mapping, Sequence
 from uuid import uuid4
 
 from inflection import camelize
@@ -36,6 +36,8 @@ class Node(Entity, metaclass=NodeMeta):
     Base class for Neo4J nodes.
 
     """
+    __indexes__: Sequence[Index] = field(default_factory=list)
+
     def unique_properties(self) -> Mapping[str, PropertyType]:
         keys = {
             index.key

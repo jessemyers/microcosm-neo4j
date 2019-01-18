@@ -12,7 +12,7 @@ class Person(Node):
     name: str
 
     __indexes__ = [
-        Index.unique("Person", "name"),
+        Index("Person", "name"),
     ]
 
 

@@ -67,7 +67,6 @@ class Store(Generic[T]):
         return self.make(**record)
 
     def search(self, **kwargs) -> Sequence[T]:
-        # XXX pagination
         query = self._search(**kwargs)
         records = all_records(self.session, query)
         return [

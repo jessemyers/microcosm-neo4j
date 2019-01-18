@@ -5,7 +5,7 @@ Simplistic management of indexes and constraints.
 from typing import Set
 
 from microcosm_neo4j.context import SessionContext, transaction
-from microcosm_neo4j.models import Index, Node
+from microcosm_neo4j.models import Index, IndexType, Node
 
 
 class SchemaManager:
@@ -76,19 +76,19 @@ class SchemaManager:
             Index(
                 key=record.get("properties")[0],
                 label=record.get("tokenNames")[0],
-                unique=record.get("type") == "node_unique_property",
+                type=IndexType(record.get("type")),
             )
             for record in records
         }
 
     def _create_index(self, index: Index) -> str:
-        if index.unique:
+        if index.is_unique:
             return f"CREATE CONSTRAINT ON (node:{index.label}) ASSERT node.{index.key} IS UNIQUE"
         else:
             return f"CREATE INDEX ON :{index.label}({index.key})"
 
     def _drop_index(self, index: Index) -> str:
-        if index.unique:
+        if index.is_unique:
             return f"DROP CONSTRAINT ON (node:{index.label}) ASSERT node.{index.key} IS UNIQUE"
         else:
             return f"DROP INDEX ON :{index.label}({index.key})"

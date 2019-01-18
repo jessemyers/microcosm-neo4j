@@ -85,7 +85,7 @@ class NodeStore(Store[N]):
             expr(self.variable),
         )
 
-    def _search(self, **kwargs) -> Cypher:
+    def _search(self, limit=None, offset=None, **kwargs) -> Cypher:
         return match(
             node(
                 self.variable,
@@ -94,4 +94,6 @@ class NodeStore(Store[N]):
             ),
         ).ret(
             expr(self.variable),
+            limit=limit,
+            skip=offset,
         )
