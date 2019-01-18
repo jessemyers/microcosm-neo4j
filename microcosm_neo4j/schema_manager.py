@@ -8,6 +8,9 @@ from microcosm_neo4j.context import SessionContext, transaction
 from microcosm_neo4j.models import Index, IndexType, Node
 
 
+# XXX need to flesh out unit tests for schema management
+
+
 class SchemaManager:
     """
     Manage Neo4J "schema" of indexes and constraints.

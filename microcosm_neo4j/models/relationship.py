@@ -8,6 +8,9 @@ from microcosm_neo4j.models.entity import Entity
 from microcosm_neo4j.models.node import Node
 
 
+# XXX should try to simplify the relationship interface
+
+
 In = TypeVar("In", bound=Node)
 Out = TypeVar("Out", bound=Node)
 
