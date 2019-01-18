@@ -1,71 +1,90 @@
-from contextlib import contextmanager
+from typing import Generic, Sequence, Type, TypeVar
 
-from neobolt.exceptions import ConstraintError
+from neo4j import Session
 from opencypher.ast import Cypher
 
 from microcosm_neo4j.context import SessionContext
-from microcosm_neo4j.errors import (
-    DuplicateModelError,
-    ModelIntegrityError,
-    NotFoundError,
-)
+from microcosm_neo4j.errors import MissingDependencyError
+from microcosm_neo4j.models.entity import Entity
+from microcosm_neo4j.query import all_records, one_record, run
 
 
-class Store:
-    def __init__(self, graph, model_class):
+T = TypeVar("T", bound=Entity)
+
+
+class Store(Generic[T]):
+
+    def __init__(self, graph, model_class: Type[T], deleted_count_property: str):
         self.graph = graph
         self.model_class = model_class
-        self.query_builder = graph.neo4j_query_builder
+        self.deleted_count_property = deleted_count_property
 
     @property
-    def session(self):
+    def session(self) -> Session:
         return SessionContext.session
 
-    def _one(self, query):
-        with self.error_handling():
-            return self._run(query).single()
+    def make(self, **kwargs) -> T:
+        return self.model_class(**kwargs)  # type: ignore
 
-    def _all(self, query):
-        with self.error_handling():
-            return self._run(query)
-
-    def _run(self, query: Cypher):
+    def count(self, **kwargs) -> int:
         """
-        Run a query using the current session.
+        Count matching entities.
 
-        """
-        # express the query as a string
-        cypher = str(query)
-        # express the parameters as a dictionary
-        parameters = dict(query)
-        return self.session.run(cypher, **parameters)
+        May not be efficient.
 
-    @contextmanager
-    def error_handling(self):
-        try:
-            yield
-        except ConstraintError as error:
-            if "already exists" in error.message:
-                raise DuplicateModelError(error)
-            if "due to conflicts with existing unique nodes" in error.message:
-                raise DuplicateModelError(error)
-            raise ModelIntegrityError(error)
-
-    def to_dict(self, record):
-        """
-        Convert a return value into a dictionary.
-
-        Note that while the `_id` property is accessible during this translation,
-        we choose to respect Neo4J's design that its internal integer ids be treated
-        as implementation details.
+        See: https://neo4j.com/developer/kb/fast-counts-using-the-count-store/
 
         """
-        if record is None:
-            # Neo4J doesn't give us a lot of context in its error responses; however just about
-            # every reason we might not get back a result relates to either omitting a `RETURN`
-            # clause or defining `MATCH` clause with no results.
-            raise NotFoundError()
+        query = self._count(**kwargs)
+        value = run(self.session, query).single()
+        return value["count"]
 
-        # NB: assumes we only want one record at a time; for more complex cases use `record[variable]`
-        entity = next(iter(record))
-        return entity._properties
+    def create(self, instance: T) -> T:
+        query = self._create(instance)
+
+        records = all_records(self.session, query)
+        if not records:
+            raise MissingDependencyError()
+
+        # NB: It's possible for a MERGE to find multiple results if there isn't an underlying
+        # uniqueness constraint (which there cannot be in Neo4J for relationships).
+        # If previous CREATE operations inserted multiple matchin entities the result set will
+        # include multiple records.
+        #
+        # We arbitrarily take the first such record.
+        record = records[0]
+        return self.make(**record)
+
+    def delete(self, identifier: str) -> bool:
+        query = self._delete(identifier)
+        result = run(self.session, query)
+        counters = result.summary().counters
+        return getattr(counters, self.deleted_count_property)
+
+    def retrieve(self, identifier: str) -> T:
+        query = self._retrieve(identifier)
+        record = one_record(self.session, query)
+        return self.make(**record)
+
+    def search(self, **kwargs) -> Sequence[T]:
+        query = self._search(**kwargs)
+        records = all_records(self.session, query)
+        return [
+            self.make(**record)
+            for record in records
+        ]
+
+    def _count(self, **kwargs) -> Cypher:
+        raise NotImplementedError
+
+    def _create(self, instance: T) -> Cypher:
+        raise NotImplementedError
+
+    def _delete(self, identifier: str) -> Cypher:
+        raise NotImplementedError
+
+    def _retrieve(self, identifier: str) -> Cypher:
+        raise NotImplementedError
+
+    def _search(self, **kwargs) -> Cypher:
+        raise NotImplementedError

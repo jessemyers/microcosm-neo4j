@@ -2,7 +2,7 @@
 from setuptools import find_packages, setup
 
 project = "microcosm-neo4j"
-version = "0.1.0"
+version = "0.2.0"
 
 url = "https://github.com/globality-corp/opencypher"
 
@@ -35,7 +35,7 @@ setup(
     install_requires=[
         "microcosm>=2.4.1",
         "neo4j>=1.7.1",
-        "opencypher>=0.2.1",
+        "opencypher>=0.3.0",
     ],
     setup_requires=[
         "nose>=1.3.7",
@@ -45,8 +45,7 @@ setup(
     entry_points={
         "microcosm.factories": [
             "neo4j = microcosm_neo4j.factory:configure_neo4j_driver",
-            "neo4j_query_builder = microcosm_neo4j.query:QueryBuilder",
-            "neo4j_schema_manager = microcosm_neo4j.schema:SchemaManager",
+            "neo4j_schema_manager = microcosm_neo4j.schema_manager:SchemaManager",
         ],
     },
     extras_require=dict(

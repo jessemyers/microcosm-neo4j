@@ -1,57 +1,134 @@
-from microcosm_neo4j.errors import MissingDependencyError
+from typing import TypeVar, Type
+
+from opencypher.ast import Cypher
+
+from opencypher.api import (
+    func,
+    expr,
+    match,
+    node,
+)
+
+from microcosm_neo4j.models.relationship import Relationship
 from microcosm_neo4j.stores.base import Store
 
 
-class RelationshipStore(Store):
+R = TypeVar("R", bound=Relationship)
+
+
+class RelationshipStore(Store[R]):
     """
     Expose persistence operations using `neo4j-driver`.
 
     """
-    def create(self, relationship):
-        """
-        Upsert a relationship.
+    def __init__(self, graph, model_class: Type[R]):
+        super().__init__(graph, model_class, "relationships_deleted")
 
-        """
-        query = self.query_builder.upsert_relationship(relationship)
-        items = list(self._all(query))
-        if not items:
-            raise MissingDependencyError()
+    @property
+    def variable(self) -> str:
+        return "r"
 
-        # XXX unlike CREATE, MERGE may find multiple existing relationships
-        item = items[0]
-        return self.to_relationship(item)
+    def _count(self, **kwargs) -> Cypher:
+        return match(
+            node(
+                "in",
+                self.model_class.in_class().label(),
+            ).rel_in(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(**kwargs),
+            ).node(
+                "out",
+                self.model_class.out_class().label(),
+            ),
+        ).ret(
+            func.count(self.variable).as_("count"),
+        )
 
-    def delete(self, identifier):
-        query = self.query_builder.delete_relationships(self.model_class, id=str(identifier))
-        result = self._run(query)
-        return result.summary().counters.relationships_deleted
+    def _create(self, instance: R) -> Cypher:
+        return match(
+            node(
+                "in",
+                instance.in_class().label(),
+                properties=dict(
+                    id=instance.in_id,
+                ),
+            ),
+        ).match(
+            node(
+                "out",
+                instance.out_class().label(),
+                properties=dict(
+                    id=instance.out_id,
+                ),
+            ),
+        ).merge(
+            node(
+                "in",
+            ).rel_in(
+                self.variable,
+                instance.__class__.label(),
+                properties=instance.properties(),
+            ).node(
+                "out",
+            ),
+        ).ret(
+            expr(self.variable),
+        )
 
-    def retrieve(self, identifier):
-        query = self.query_builder.match_relationships(self.model_class, id=str(identifier))
-        item = self._one(query)
-        return self.to_relationship(item)
+    def _delete(self, identifier: str) -> Cypher:
+        return match(
+            node(
+                "in",
+                self.model_class.in_class().label(),
+            ).rel_in(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(
+                    id=str(identifier),
+                ),
+            ).node(
+                "out",
+                self.model_class.out_class().label(),
+            ),
+        ).delete(
+            self.variable,
+        )
 
-    def count(self, **kwargs):
-        # XXX relationship counts are not going to be efficient except under narrow circumstances
-        # https://neo4j.com/developer/kb/fast-counts-using-the-count-store/
-        query = self.query_builder.count_relationships(self.model_class, **kwargs)
-        item = self._one(query)
-        return item["count"]
+    def _retrieve(self, identifier: str) -> Cypher:
+        return match(
+            node(
+                "in",
+                self.model_class.in_class().label(),
+            ).rel_in(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(
+                    id=str(identifier),
+                ),
+            ).node(
+                "out",
+                self.model_class.out_class().label(),
+            ),
+        ).ret(
+            self.variable,
+        )
 
-    def search(self, **kwargs):
-        query = self.query_builder.match_relationships(self.model_class, **kwargs)
-        items = self._all(query)
-        return [
-            self.to_relationship(item)
-            for item in items
-        ]
-
-    def to_relationship(self, item):
-        """
-        Convert a result record to a Relationship model.
-
-        """
-        kwargs = self.to_dict(item)
-        return self.model_class(
-            **kwargs,
+    def _search(self, limit=None, offset=None, **kwargs) -> Cypher:
+        return match(
+            node(
+                "in",
+                self.model_class.in_class().label(),
+            ).rel_in(
+                self.variable,
+                self.model_class.label(),
+                properties=self.model_class.matching_properties(**kwargs),
+            ).node(
+                "out",
+                self.model_class.out_class().label(),
+            ),
+        ).ret(
+            self.variable,
+            limit=limit,
+            skip=offset,
         )
